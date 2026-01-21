@@ -3,1321 +3,1702 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>RotationsManagement</title>
+<title>Basketball Rotation Tracker</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
 :root{
- --bg:#0b0f14;--card:#121826;--border:#1f2937;--txt:#e5e7eb;
+ --bg:#0f172a;--card:#1e293b;--border:#334155;--txt:#f1f5f9;
  --green:#22c55e;--orange:#f59e0b;--red:#ef4444;--muted:#94a3b8;
- --fillGreen: rgba(34,197,94,.12);
- --fillOrange: rgba(245,158,11,.14);
- --fillRed: rgba(239,68,68,.14);
+ --blue:#3b82f6;--purple:#8b5cf6;
+ --fillGreen: rgba(34,197,94,.15);
+ --fillOrange: rgba(245,158,11,.15);
+ --fillRed: rgba(239,68,68,.15);
 }
-body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui}
-header{padding:12px;border-bottom:1px solid var(--border)}
-h1{margin:0;font-size:20px}
-
-.controls{text-align:center;margin:10px}
-button{padding:10px 14px;border-radius:12px;border:1px solid var(--border);
- background:#0f172a;color:#fff;font-weight:800;cursor:pointer}
-button:disabled{opacity:.45;cursor:not-allowed}
-.topRow{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
-.badge{font-size:12px;color:var(--muted);padding:4px 8px;border:1px solid var(--border);border-radius:999px}
-#quarterClock{font-size:40px;font-weight:900;letter-spacing:.5px;margin-top:8px}
-
-/* Layout */
-.main{display:grid;grid-template-columns:1.1fr .9fr;gap:10px;padding:10px}
-@media(max-width:920px){ .main{grid-template-columns:1fr;} }
-
-/* Court */
-.courtWrap{
-  background:linear-gradient(180deg,rgba(15,23,42,.65),rgba(15,23,42,.15));
-  border:1px solid var(--border);
-  border-radius:16px;
-  padding:12px;
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--txt);
+  font-family:system-ui, -apple-system, sans-serif;
+  font-size:14px;
 }
-.courtTitle{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px}
-.courtTitle h2{margin:0;font-size:16px}
-.court{
-  background:
-    radial-gradient(circle at 50% 45%, rgba(229,231,235,.06), transparent 60%),
-    linear-gradient(180deg, rgba(11,15,20,.25), rgba(11,15,20,.65));
-  border:1px solid var(--border);
-  border-radius:18px;
-  padding:12px;
-  height: clamp(520px, 68vh, 780px);
-  position:relative;
-  overflow:auto;
+header{
+  background:var(--card);
+  border-bottom:1px solid var(--border);
+  padding:12px 16px;
 }
-.slotGrid{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:12px;
-  position:relative;
-  inset:auto;
-}
-.slot{
-  background:rgba(11,18,32,.55);
-  border:1px dashed rgba(148,163,184,.35);
-  border-radius:16px;
-  padding:10px;
-  display:flex;
-  align-items:stretch;
-  justify-content:stretch;
-  overflow:hidden;     /* avoids overlap */
-  min-height: clamp(190px, 22vh, 260px);
-}
-.slot.center{grid-column:1 / span 2;min-height: clamp(170px, 20vh, 230px)}
-.slot .placeholder{
-  width:100%;
+h1{
+  margin:0;
+  font-size:18px;
+  font-weight:800;
   display:flex;
   align-items:center;
-  justify-content:center;
-  color:rgba(148,163,184,.75);
-  font-weight:950;
-  letter-spacing:.4px;
-}
-
-/* Bench */
-.benchWrap{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:16px;
-  padding:12px;
-}
-.benchTitle{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px}
-.benchTitle h2{margin:0;font-size:16px}
-.benchList{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:10px;
-}
-@media(max-width:520px){ .benchList{grid-template-columns:1fr;} }
-
-/* Player card */
-.pcard{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:10px;
-  user-select:none;
-  transition:transform .08s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease;
-}
-.pcard:active{transform:scale(.99)}
-.pcard.dragging{opacity:.55;transform:scale(.98)}
-.pcard.onCourt{border:2px solid var(--green);box-shadow:0 0 12px rgba(34,197,94,.25)}
-.pcard.fillGreen{background:linear-gradient(180deg,var(--fillGreen),transparent 70%), var(--card);}
-.pcard.fillOrange{background:linear-gradient(180deg,var(--fillOrange),transparent 70%), var(--card);}
-.pcard.fillRed{background:linear-gradient(180deg,var(--fillRed),transparent 70%), var(--card);}
-
-.nameRow{display:flex;justify-content:space-between;align-items:center;gap:10px}
-.name{font-weight:950;font-size:16px;line-height:1.1}
-.iconBtn{
-  border:1px solid var(--border);
-  background:transparent;
-  padding:6px 10px;
-  border-radius:12px;
-  font-weight:950;
-}
-.meta{display:flex;flex-direction:column;gap:6px;margin-top:8px}
-.line{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.small{font-size:12px;color:var(--muted)}
-.pill{font-size:12px;padding:4px 8px;border-radius:999px;border:1px solid var(--border);color:var(--muted)}
-.pill.warn{border-color:rgba(245,158,11,.5);color:#fbbf24}
-.pill.bad{border-color:rgba(239,68,68,.55);color:#fca5a5}
-.fBtns{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
-.fBtns button{padding:8px 10px;border-radius:12px}
-
-/* Compact card used on-court */
-.pcard.compact{
-  padding:12px;
-  height:100%;
-  width:100%;
-  max-width:340px;
-  margin:auto;
-  box-sizing:border-box;
-  display:flex;
-  flex-direction:column;
   gap:8px;
 }
-.pcard.compact .meta{gap:8px;margin-top:8px}
-.pcard.compact .line{font-size:14px}
-.pcard.compact .fBtns button{padding:9px 12px}
-.pcard.compact .name{font-size:17px}
-.pcard.compact .iconBtn{padding:8px 12px}
+h1:before{
+  content:"🏀";
+}
 
-/* Position tags */
-.posTags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
-.posTag{
-  font-size:11px;
-  padding:3px 7px;
-  border-radius:999px;
+/* ===== SCOREBOARD ===== */
+.scoreboard-section{
+  padding:12px 16px;
+  background:linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border-bottom:1px solid var(--border);
+}
+.scoreboard{
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  gap:20px;
+  align-items:center;
+  margin-bottom:12px;
+}
+.team{
+  text-align:center;
+  padding:12px;
+  background:rgba(30,41,59,0.6);
+  border-radius:12px;
   border:1px solid var(--border);
+}
+.team-name{
+  font-size:14px;
+  font-weight:700;
+  color:var(--muted);
+  margin-bottom:4px;
+}
+.team-score{
+  font-size:32px;
+  font-weight:900;
+  color:#fff;
+}
+.vs{
+  font-size:12px;
+  color:var(--muted);
+  font-weight:700;
+}
+
+.quarter-scores{
+  display:grid;
+  grid-template-columns:repeat(5, 1fr);
+  gap:8px;
+  text-align:center;
+}
+.q-score{
+  background:rgba(30,41,59,0.8);
+  border-radius:8px;
+  padding:6px;
+  border:1px solid var(--border);
+}
+.q-label{
+  font-size:11px;
+  color:var(--muted);
+  margin-bottom:2px;
+}
+.q-value{
+  font-size:16px;
+  font-weight:800;
+}
+
+/* ===== GAME CONTROLS ===== */
+.game-controls{
+  padding:12px 16px;
+  background:var(--card);
+  border-bottom:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:12px;
+}
+.quarter-info{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.q-display{
+  background:var(--bg);
+  padding:8px 16px;
+  border-radius:10px;
+  border:2px solid var(--blue);
+  font-weight:900;
+  font-size:16px;
+  min-width:70px;
+  text-align:center;
+}
+.clock-display{
+  font-size:28px;
+  font-weight:900;
+  letter-spacing:1px;
+  color:#fff;
+  min-width:100px;
+  text-align:center;
+}
+.control-buttons{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+.control-btn{
+  padding:10px 16px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:var(--bg);
+  color:var(--txt);
+  font-weight:700;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  white-space:nowrap;
+}
+.control-btn.primary{
+  background:var(--blue);
+  border-color:var(--blue);
+}
+.control-btn.play{
+  background:var(--green);
+  border-color:var(--green);
+}
+.control-btn:disabled{
+  opacity:0.5;
+  cursor:not-allowed;
+}
+.on-court-badge{
+  background:rgba(34,197,94,.15);
+  border:1px solid rgba(34,197,94,.3);
+  color:var(--green);
+  padding:6px 12px;
+  border-radius:20px;
+  font-size:12px;
+  font-weight:700;
+}
+
+/* ===== POINT SCORING ===== */
+.point-scoring{
+  padding:12px 16px;
+  border-bottom:1px solid var(--border);
+  background:rgba(30,41,59,0.5);
+}
+.point-scoring h3{
+  margin:0 0 10px 0;
+  font-size:14px;
+  color:var(--muted);
+}
+.point-buttons{
+  display:flex;
+  gap:10px;
+}
+.point-btn{
+  flex:1;
+  padding:14px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:var(--card);
+  color:var(--txt);
+  font-weight:900;
+  font-size:16px;
+  cursor:pointer;
+  transition:all 0.2s;
+}
+.point-btn:hover{
+  transform:translateY(-2px);
+}
+.point-btn.three{
+  background:linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border-color:#7c3aed;
+}
+.point-btn.two{
+  background:linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-color:#2563eb;
+}
+.point-btn.one{
+  background:linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-color:#059669;
+}
+
+/* ===== MAIN LAYOUT ===== */
+.main-layout{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  padding:12px 16px;
+}
+@media(max-width:920px){
+  .main-layout{ grid-template-columns:1fr; }
+}
+
+/* ===== COURT SECTION ===== */
+.court-section{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:14px;
+}
+.section-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:12px;
+}
+.section-header h2{
+  margin:0;
+  font-size:16px;
+  font-weight:800;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.section-header .small{
+  font-size:12px;
   color:var(--muted);
 }
 
-/* Recommendations */
-.recoWrap{
-  margin:10px;
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:16px;
-  padding:12px;
-}
-.recoWrap h2{margin:0 0 8px 0;font-size:16px}
-.recoWrap ul{margin:0;padding-left:18px}
-.recoWrap li{margin:8px 0}
-
-/* Foul Lists */
-.lists{
-  border-top:1px solid var(--border);
-  padding:10px;
-}
-.listsGrid{
+.court-grid{
   display:grid;
-  grid-template-columns:repeat(3,1fr);
+  grid-template-columns:repeat(2, 1fr);
   gap:10px;
 }
-@media(max-width:920px){ .listsGrid{grid-template-columns:1fr;} }
-.listBox{
+.court-slot{
+  background:rgba(15,23,42,0.7);
+  border:2px dashed rgba(148,163,184,0.3);
+  border-radius:12px;
+  padding:12px;
+  min-height:160px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.court-slot.center{
+  grid-column:1 / span 2;
+  min-height:140px;
+}
+.court-slot .placeholder{
+  color:rgba(148,163,184,0.5);
+  font-weight:900;
+  font-size:14px;
+  letter-spacing:0.5px;
+}
+
+/* ===== BENCH SECTION ===== */
+.bench-section{
   background:var(--card);
   border:1px solid var(--border);
-  border-radius:14px;
-  padding:10px;
+  border-radius:12px;
+  padding:14px;
 }
-.listBox h3{margin:0 0 6px 0;font-size:14px}
-.listBox ul{margin:0;padding-left:18px}
-.listBox li{margin:6px 0}
+.bench-grid{
+  display:grid;
+  grid-template-columns:repeat(2, 1fr);
+  gap:10px;
+}
+@media(max-width:520px){
+  .bench-grid{ grid-template-columns:1fr; }
+}
 
-/* Modal */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:20}
-.modal.show{display:flex}
-.box{background:#0f172a;border:1px solid var(--border);border-radius:16px;padding:14px;width:min(560px,92vw)}
-.fieldRow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-@media(max-width:520px){ .fieldRow{grid-template-columns:1fr;} }
-label{display:block;font-size:12px;color:var(--muted);margin:8px 0 6px}
-input{
-  width:100%;box-sizing:border-box;
-  padding:10px 12px;border-radius:12px;
+/* ===== PLAYER CARD ===== */
+.player-card{
+  background:var(--bg);
   border:1px solid var(--border);
-  background:#0b1220;color:var(--txt);
-  font-weight:850;
+  border-radius:10px;
+  padding:12px;
+  user-select:none;
+  position:relative;
+  transition:all 0.2s;
 }
-.actions{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}
-.hr{height:1px;background:var(--border);margin:12px 0}
-
-/* Tap-to-place selection */
-.pcard.selected{
-  outline: 3px solid rgba(255,255,255,.35);
-  box-shadow: 0 0 0 3px rgba(34,197,94,.25), 0 0 18px rgba(34,197,94,.25);
+.player-card:active{
+  transform:scale(0.98);
+}
+.player-card.dragging{
+  opacity:0.6;
+}
+.player-card.on-court{
+  border:2px solid var(--green);
+  background:linear-gradient(135deg, rgba(34,197,94,0.1) 0%, transparent 100%);
+}
+.player-card.fillGreen{
+  background:linear-gradient(135deg, var(--fillGreen), transparent);
+}
+.player-card.fillOrange{
+  background:linear-gradient(135deg, var(--fillOrange), transparent);
+}
+.player-card.fillRed{
+  background:linear-gradient(135deg, var(--fillRed), transparent);
 }
 
-/* Visual alerts */
+.player-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  margin-bottom:10px;
+}
+.player-name{
+  font-weight:900;
+  font-size:15px;
+  color:#fff;
+}
+.player-number{
+  color:var(--muted);
+  font-size:12px;
+  margin-top:2px;
+}
+.player-positions{
+  display:flex;
+  gap:4px;
+  margin-top:4px;
+}
+.position-tag{
+  font-size:10px;
+  padding:2px 6px;
+  border-radius:10px;
+  background:rgba(30,41,59,0.8);
+  color:var(--muted);
+  border:1px solid var(--border);
+}
+
+.player-stats{
+  display:grid;
+  grid-template-columns:repeat(2, 1fr);
+  gap:8px;
+  margin:10px 0;
+}
+.stat-item{
+  text-align:center;
+}
+.stat-label{
+  font-size:10px;
+  color:var(--muted);
+  margin-bottom:2px;
+}
+.stat-value{
+  font-weight:800;
+  font-size:14px;
+}
+.stat-value.points{
+  color:#fbbf24;
+}
+
+.player-fouls{
+  background:rgba(30,41,59,0.8);
+  border-radius:8px;
+  padding:8px;
+  margin:10px 0;
+}
+.foul-status{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.foul-count{
+  font-weight:800;
+  font-size:14px;
+}
+.foul-level{
+  font-size:11px;
+  padding:3px 8px;
+  border-radius:10px;
+  font-weight:700;
+}
+.foul-level.safe{
+  background:rgba(34,197,94,0.15);
+  color:var(--green);
+}
+.foul-level.warn{
+  background:rgba(245,158,11,0.15);
+  color:var(--orange);
+}
+.foul-level.bad{
+  background:rgba(239,68,68,0.15);
+  color:var(--red);
+}
+
+.player-actions{
+  display:flex;
+  gap:6px;
+  margin-top:10px;
+}
+.action-btn{
+  flex:1;
+  padding:6px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  background:rgba(30,41,59,0.8);
+  color:var(--txt);
+  font-size:11px;
+  font-weight:700;
+  cursor:pointer;
+  text-align:center;
+}
+.action-btn.foul{
+  background:rgba(239,68,68,0.1);
+  border-color:rgba(239,68,68,0.3);
+}
+.action-btn.edit{
+  background:rgba(59,130,246,0.1);
+  border-color:rgba(59,130,246,0.3);
+}
+
+/* ===== RECOMMENDATIONS ===== */
+.recommendations-section{
+  padding:12px 16px;
+  background:var(--card);
+  border-top:1px solid var(--border);
+}
+.recommendations-section h2{
+  margin:0 0 8px 0;
+  font-size:15px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.recommendations-list{
+  list-style:none;
+  padding:0;
+  margin:0;
+}
+.recommendations-list li{
+  padding:10px;
+  background:rgba(15,23,42,0.5);
+  border-radius:8px;
+  margin-bottom:8px;
+  border-left:3px solid var(--orange);
+}
+.recommendations-list .reason{
+  font-size:12px;
+  color:var(--muted);
+  margin-top:4px;
+}
+
+/* ===== FOUL LISTS ===== */
+.foul-lists{
+  padding:12px 16px;
+  background:var(--bg);
+  border-top:1px solid var(--border);
+}
+.foul-lists-grid{
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:12px;
+}
+@media(max-width:920px){
+  .foul-lists-grid{ grid-template-columns:1fr; }
+}
+.foul-list{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:12px;
+}
+.foul-list h3{
+  margin:0 0 8px 0;
+  font-size:14px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.foul-list ul{
+  list-style:none;
+  padding:0;
+  margin:0;
+}
+.foul-list li{
+  padding:6px 0;
+  border-bottom:1px solid rgba(148,163,184,0.1);
+  font-size:13px;
+}
+.foul-list li:last-child{
+  border-bottom:none;
+}
+
+/* ===== MODAL ===== */
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.7);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:1000;
+}
+.modal.show{
+  display:flex;
+}
+.modal-box{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:20px;
+  width:min(500px, 90vw);
+  max-height:80vh;
+  overflow-y:auto;
+}
+
+/* ===== SELECTION HINT ===== */
+.selection-hint{
+  margin:0 16px 12px 16px;
+  padding:10px 14px;
+  background:rgba(30,41,59,0.8);
+  border:1px solid var(--border);
+  border-radius:10px;
+  display:none;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+.selection-hint.show{
+  display:flex;
+}
+.selection-chip{
+  padding:6px 12px;
+  background:rgba(34,197,94,0.15);
+  border:1px solid rgba(34,197,94,0.3);
+  border-radius:20px;
+  font-weight:700;
+  font-size:12px;
+  color:var(--green);
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes pulse {
+  0%{ box-shadow:0 0 0 0 rgba(34,197,94,0.5); }
+  70%{ box-shadow:0 0 0 10px rgba(34,197,94,0); }
+  100%{ box-shadow:0 0 0 0 rgba(34,197,94,0); }
+}
+.pulse{
+  animation:pulse 1.5s infinite;
+}
+
+/* ===== TAP-TO-PLACE ===== */
+.player-card.selected{
+  border:2px solid var(--blue);
+  box-shadow:0 0 0 3px rgba(59,130,246,0.2);
+}
+
+/* ===== VISUAL ALERTS ===== */
 @keyframes pulseWarm {
-  0%{ box-shadow: 0 0 0 rgba(245,158,11,0), 0 0 0 rgba(245,158,11,0); }
-  50%{ box-shadow: 0 0 0 3px rgba(245,158,11,.15), 0 0 18px rgba(245,158,11,.25); }
-  100%{ box-shadow: 0 0 0 rgba(245,158,11,0), 0 0 0 rgba(245,158,11,0); }
+  0%{ box-shadow: 0 0 0 rgba(245,158,11,0); }
+  50%{ box-shadow: 0 0 0 3px rgba(245,158,11,.2); }
+  100%{ box-shadow: 0 0 0 rgba(245,158,11,0); }
 }
 @keyframes pulseHot {
-  0%{ box-shadow: 0 0 0 rgba(239,68,68,0), 0 0 0 rgba(239,68,68,0); }
-  50%{ box-shadow: 0 0 0 3px rgba(239,68,68,.18), 0 0 18px rgba(239,68,68,.28); }
-  100%{ box-shadow: 0 0 0 rgba(239,68,68,0), 0 0 0 rgba(239,68,68,0); }
+  0%{ box-shadow: 0 0 0 rgba(239,68,68,0); }
+  50%{ box-shadow: 0 0 0 3px rgba(239,68,68,.2); }
+  100%{ box-shadow: 0 0 0 rgba(239,68,68,0); }
 }
 @keyframes pulseBench {
-  0%{ box-shadow: 0 0 0 rgba(148,163,184,0), 0 0 0 rgba(148,163,184,0); }
-  50%{ box-shadow: 0 0 0 3px rgba(148,163,184,.14), 0 0 18px rgba(148,163,184,.22); }
-  100%{ box-shadow: 0 0 0 rgba(148,163,184,0), 0 0 0 rgba(148,163,184,0); }
+  0%{ box-shadow: 0 0 0 rgba(148,163,184,0); }
+  50%{ box-shadow: 0 0 0 3px rgba(148,163,184,.15); }
+  100%{ box-shadow: 0 0 0 rgba(148,163,184,0); }
 }
 
 .pulseWarm{ animation: pulseWarm 1.6s ease-in-out infinite; }
 .pulseHot{  animation: pulseHot  1.4s ease-in-out infinite; }
 .pulseBench{ animation: pulseBench 1.8s ease-in-out infinite; }
-
-/* Small hint bar for tap-to-place */
-.hintBar{
-  margin: 0 10px 10px 10px;
-  padding: 10px 12px;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  background: rgba(15,23,42,.45);
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-}
-.hintBar .left{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.hintBar .chip{
-  padding:6px 10px;
-  border-radius:999px;
-  border:1px solid var(--border);
-  font-weight:900;
-}
-.hintBar .chip.on{ border-color: rgba(34,197,94,.45); box-shadow: 0 0 14px rgba(34,197,94,.18); }
-
 </style>
 </head>
 <body>
-<header><h1>RotationsManagement</h1></header>
+<header>
+  <h1>Basketball Rotation Tracker</h1>
+</header>
 
-<div class="controls">
-  <div class="topRow">
-    <button id="toggle">▶ Start / Stop</button>
-    <button id="qMinus" title="Quarter -1">-</button>
-    <button id="quarterBtn" aria-label="Quarter">Q1</button>
-    <button id="qPlus" title="Quarter +1">+</button>
-    <span class="badge" id="onCountBadge">On court: 0/5</span>
-  </div>
-  <div id="quarterClock">10:00</div>
-
-  <div style="margin-top:10px;">
-    <button id="resetAll">Reset All</button>
-    <button id="exportBtn">Export Game</button>
-  </div>
-</div>
-
-
-<div class="hintBar" id="hintBar" style="display:none;">
-  <div class="left">
-    <span class="chip on" id="selChip">Seleccionado: -</span>
-    <span class="small">Toca una posición (slot) para colocarlo. Vuelve a tocar el jugador para deseleccionar.</span>
-  </div>
-  <button class="iconBtn" id="clearSelBtn" type="button">Cancelar</button>
-</div>
-
-<div class="main">
-  <div class="courtWrap">
-    <div class="courtTitle">
-      <h2>🏀 Pista (arrastra para hacer cambios)</h2>
-      <span class="small">Drop en un hueco = entra. Si ya hay uno, swap automático.</span>
+<!-- SCOREBOARD -->
+<div class="scoreboard-section">
+  <div class="scoreboard">
+    <div class="team" id="teamHome">
+      <div class="team-name">HOME</div>
+      <div class="team-score" id="scoreHome">0</div>
     </div>
+    <div class="vs">VS</div>
+    <div class="team" id="teamAway">
+      <div class="team-name">AWAY</div>
+      <div class="team-score" id="scoreAway">0</div>
+    </div>
+  </div>
+  
+  <div class="quarter-scores">
+    <div class="q-score">
+      <div class="q-label">Q1</div>
+      <div class="q-value" id="q1Home">0</div>
+      <div class="q-value" id="q1Away">0</div>
+    </div>
+    <div class="q-score">
+      <div class="q-label">Q2</div>
+      <div class="q-value" id="q2Home">0</div>
+      <div class="q-value" id="q2Away">0</div>
+    </div>
+    <div class="q-score">
+      <div class="q-label">Q3</div>
+      <div class="q-value" id="q3Home">0</div>
+      <div class="q-value" id="q3Away">0</div>
+    </div>
+    <div class="q-score">
+      <div class="q-label">Q4</div>
+      <div class="q-value" id="q4Home">0</div>
+      <div class="q-value" id="q4Away">0</div>
+    </div>
+    <div class="q-score">
+      <div class="q-label">TOTAL</div>
+      <div class="q-value" id="totalHome">0</div>
+      <div class="q-value" id="totalAway">0</div>
+    </div>
+  </div>
+</div>
 
-    <div class="court" id="court">
-      <div class="slotGrid">
-        <div class="slot center" data-slot="0"><div class="placeholder">JOKER</div></div>
-        <div class="slot" data-slot="1"><div class="placeholder">ALERO</div></div>
-        <div class="slot" data-slot="2"><div class="placeholder">ALERO</div></div>
-        <div class="slot" data-slot="3"><div class="placeholder">BASE</div></div>
-        <div class="slot" data-slot="4"><div class="placeholder">ESCOLTA</div></div>
+<!-- GAME CONTROLS -->
+<div class="game-controls">
+  <div class="quarter-info">
+    <div class="q-display" id="quarterDisplay">Q1</div>
+    <div class="clock-display" id="gameClock">10:00</div>
+    <span class="on-court-badge" id="onCourtBadge">On Court: 0/5</span>
+  </div>
+  
+  <div class="control-buttons">
+    <button class="control-btn play" id="playBtn">▶ PLAY</button>
+    <button class="control-btn" id="undoBtn">↺ UNDO</button>
+    <button class="control-btn" id="stintsBtn">SET STINTS</button>
+    <button class="control-btn" id="reportBtn">REPORT</button>
+  </div>
+</div>
+
+<!-- POINT SCORING -->
+<div class="point-scoring">
+  <h3>ANOTAR PUNTOS</h3>
+  <div class="point-buttons">
+    <button class="point-btn three" data-points="3">+ 3 PTS</button>
+    <button class="point-btn two" data-points="2">+ 2 PTS</button>
+    <button class="point-btn one" data-points="1">+ 1 PT</button>
+  </div>
+</div>
+
+<!-- TAP-TO-PLACE HINT -->
+<div class="selection-hint" id="selectionHint">
+  <div class="selection-info">
+    <span class="selection-chip" id="selectedPlayerChip">Selected: -</span>
+    <span class="small">Tap a court position to place player. Tap player again to deselect.</span>
+  </div>
+  <button class="action-btn" id="clearSelectionBtn">Cancel</button>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div class="main-layout">
+  <!-- COURT SECTION -->
+  <div class="court-section">
+    <div class="section-header">
+      <h2>🏀 ON COURT</h2>
+      <span class="small">Drag & drop to swap. Drop on slot = enter.</span>
+    </div>
+    <div class="court-grid" id="courtGrid">
+      <div class="court-slot center" data-slot="0">
+        <div class="placeholder">JOKER</div>
+      </div>
+      <div class="court-slot" data-slot="1">
+        <div class="placeholder">ALERO</div>
+      </div>
+      <div class="court-slot" data-slot="2">
+        <div class="placeholder">ALERO</div>
+      </div>
+      <div class="court-slot" data-slot="3">
+        <div class="placeholder">BASE</div>
+      </div>
+      <div class="court-slot" data-slot="4">
+        <div class="placeholder">ESCOLTA</div>
       </div>
     </div>
   </div>
-
-  <div class="benchWrap">
-    <div class="benchTitle">
-      <h2>🪑 Banquillo</h2>
-      <span class="small">Arrastra a pista para meter</span>
+  
+  <!-- BENCH SECTION -->
+  <div class="bench-section">
+    <div class="section-header">
+      <h2>🪑 BENCH</h2>
+      <span class="small">Drag to court to enter</span>
     </div>
-    <div class="benchList" id="benchList"></div>
+    <div class="bench-grid" id="benchGrid"></div>
   </div>
 </div>
 
-<div class="recoWrap">
-  <h2>🔁 Recomendaciones de cambios</h2>
-  <div class="small">Basado en posición + faltas + stint en pista + tiempo en banquillo.</div>
-  <ul id="recoList"></ul>
+<!-- RECOMMENDATIONS -->
+<div class="recommendations-section">
+  <h2>🔁 SUB RECOMMENDATIONS</h2>
+  <ul class="recommendations-list" id="recommendationsList">
+    <li>No urgent changes needed</li>
+  </ul>
 </div>
 
-<div class="lists">
-  <div class="listsGrid">
-    <div class="listBox">
-      <h3>✅ No nos preocupa</h3>
-      <ul id="fSafe"></ul>
+<!-- FOUL WARNINGS -->
+<div class="foul-lists">
+  <div class="foul-lists-grid">
+    <div class="foul-list">
+      <h3>✅ SAFE</h3>
+      <ul id="foulSafeList"></ul>
     </div>
-    <div class="listBox">
-      <h3>🟠 A 1 falta de preocupar</h3>
-      <ul id="fWarn"></ul>
+    <div class="foul-list">
+      <h3>🟠 WARNING</h3>
+      <ul id="foulWarnList"></ul>
     </div>
-    <div class="listBox">
-      <h3>🔴 Nos preocupa</h3>
-      <ul id="fBad"></ul>
+    <div class="foul-list">
+      <h3>🔴 DANGER</h3>
+      <ul id="foulDangerList"></ul>
     </div>
   </div>
 </div>
 
-<!-- Player edit modal -->
+<!-- PLAYER EDIT MODAL -->
 <div id="playerModal" class="modal">
-  <div class="box">
-    <h3 id="pmTitle">Editar jugador</h3>
-
-    <label>Nombre</label>
-    <input id="pmName" placeholder="Nombre del jugador">
-
-    <div class="hr"></div>
-    <div class="small">Posiciones (elige hasta 2)</div>
-    <div id="pmPos" class="posTags" style="margin-top:8px"></div>
-
-    <div class="hr"></div>
-    <div class="small">Límites de stint por jugador (segundos)</div>
-
-    <div class="fieldRow">
-      <div>
-        <label>Verde hasta</label>
-        <input id="pmGreen" type="number" min="0" max="1800" step="5">
-      </div>
-      <div>
-        <label>Naranja hasta</label>
-        <input id="pmOrange" type="number" min="0" max="1800" step="5">
+  <div class="modal-box">
+    <h3>Edit Player</h3>
+    <div style="margin:20px 0">
+      <label style="display:block;margin-bottom:8px;font-size:12px;color:var(--muted)">Player Name</label>
+      <input id="playerNameInput" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--txt)">
+    </div>
+    <div style="margin:20px 0">
+      <label style="display:block;margin-bottom:8px;font-size:12px;color:var(--muted)">Positions (max 2)</label>
+      <div id="positionPicker" style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="position-btn" data-pos="Base">Base</button>
+        <button class="position-btn" data-pos="Escolta">Escolta</button>
+        <button class="position-btn" data-pos="Alero">Alero</button>
+        <button class="position-btn" data-pos="Joker">Joker</button>
       </div>
     </div>
-
-    <div class="hr"></div>
-    <div class="small">Límites de faltas por cuarto (para este jugador)</div>
-
-    <div class="fieldRow">
-      <div><label>Q1</label><input id="pmF1" type="number" min="0" max="5"></div>
-      <div><label>Q2</label><input id="pmF2" type="number" min="0" max="5"></div>
-    </div>
-    <div class="fieldRow">
-      <div><label>Q3</label><input id="pmF3" type="number" min="0" max="5"></div>
-      <div><label>Q4</label><input id="pmF4" type="number" min="0" max="5"></div>
-    </div>
-
-    <div class="actions">
-      <button onclick="closePlayerModal()">Cancel</button>
-      <button id="pmSave">Save</button>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="control-btn" onclick="closePlayerModal()">Cancel</button>
+      <button class="control-btn primary" id="savePlayerBtn">Save</button>
     </div>
   </div>
-<div id='scoreModal' class='modal'><div class='box'><h3 id='scoreTitle'></h3><div id='scoreList' class='benchList'></div><button class='iconBtn' style='background:#dc2626;color:#fff' onclick='addRival()'>+ para Rival</button><button onclick='closeScore()'>Cancelar</button></div></div>
+</div>
+
+<!-- POINTS MODAL -->
+<div id="pointsModal" class="modal">
+  <div class="modal-box">
+    <h3 id="pointsTitle">Who scored?</h3>
+    <div class="bench-grid" id="pointsPlayerList"></div>
+    <div style="display:flex;gap:10px;margin-top:20px">
+      <button class="control-btn" style="background:#dc2626;color:#fff" onclick="addPointsToRival()">+ for Rival</button>
+      <button class="control-btn" onclick="closePointsModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <script>
-/* =======================
-   Config
-======================= */
-const MAX_ON = 5;
-const QT_TIME = 600;
+// ========================
+// STATE & CONFIG
+// ========================
+const MAX_ON_COURT = 5;
+const QUARTER_TIME = 600; // 10 minutes in seconds
+const SLOT_ROLES = ["Joker", "Alero", "Alero", "Base", "Escolta"];
+const POSITION_OPTIONS = ["Base", "Escolta", "Alero", "Joker"];
 
-// Slot roles in the same order as your grid (0..4)
-const SLOT_ROLES = ["Joker","Alero","Alero","Base","Escolta"];
-const POS_OPTIONS = ["Base","Escolta","Alero","Joker"];
+// Game state
+let gameRunning = false;
+let currentQuarter = 1;
+let quarterClock = QUARTER_TIME;
+let gameElapsed = 0;
+let lastTimestamp = performance.now();
 
-/* =======================
-   State
-======================= */
-let running=false, quarter=1, qClock=QT_TIME;
-let gameElapsed = 0; // seconds since game start (only while running)
+// Score state
+let homeScore = 0;
+let awayScore = 0;
+let quarterScores = {
+  home: [0, 0, 0, 0],
+  away: [0, 0, 0, 0]
+};
 
-let last = performance.now();
-
-const DEFAULT_STINT = { green:180, orange:270 };
-const DEFAULT_FOULS = {1:2,2:3,3:3,4:4};
-
-const defaultNames=[...Array(12)].map((_,i)=>"Jugador "+(i+1));
-
-function clamp(x,a,b){return Math.max(a,Math.min(b,x))}
-
-function qLabel(){
-  return "Q"+quarter+" "+fmt(qClock);
-}
-function logEvent(type, payload){
-  const elapsedInQ = Math.max(0, QT_TIME - qClock);
-  eventLog.push({
-    t: Date.now(),
-    label: qLabel(),
-    quarter,
-    qClock: Number(qClock.toFixed(2)),
-    elapsedInQuarter: Number(elapsedInQ.toFixed(2)),
-    gameElapsed: Number(gameElapsed.toFixed(2)),
-    type,
-    ...payload
-  });
-  // keep log bounded
-  if(eventLog.length>2000) eventLog = eventLog.slice(-2000);
-}
-
-function fmt(s){
-  const m=Math.floor(s/60);
-  const ss=Math.floor(s%60);
-  return m+":"+String(ss).padStart(2,"0");
-}
-
-const players=[...Array(12)].map((_,i)=>({
-  id:i,
-  name:defaultNames[i],
-  fouls:0,
-  foulStatus:"auto", // auto | forceBad | forceSafe
-  courtTotal:0,
-  benchTotal:0,
-  // fatigue model
-  fatigue:0,
-  qCourt:0,
-  qBench:0,
-  maxStint:0,
-  stintsCount:0,
-  courtFoulsStart:0,
-  stintType:"bench",
-  stintStartLabel:"Q1 10:00",
-  stintStartElapsedInQ:0,
-  stint:0,
-  stintLimits:{ green:DEFAULT_STINT.green, orange:DEFAULT_STINT.orange },
-  foulLimits:{ ...DEFAULT_FOULS },
-  positions:["Base"] // up to 2 positions per player
+// Player state
+const players = Array.from({length: 12}, (_, i) => ({
+  id: i,
+  number: i + 1,
+  name: `Player ${i + 1}`,
+  positions: ["Base"],
+  fouls: 0,
+  foulStatus: "auto", // auto | forceBad | forceSafe
+  points: 0,
+  courtTotal: 0,
+  benchTotal: 0,
+  stint: 0,
+  stintLimits: { green: 180, orange: 270 },
+  foulLimits: { 1: 2, 2: 3, 3: 3, 4: 4 },
+  fatigue: 0,
+  qCourt: 0,
+  qBench: 0,
+  maxStint: 0,
+  stintsCount: 0,
+  courtFoulsStart: 0,
+  stintType: "bench",
+  stintStartLabel: "Q1 10:00",
+  stintStartElapsedInQ: 0
 }));
 
-// Court slots store player ids (or null)
-let courtSlots = [null,null,null,null,null];
+// Court slots (null = empty)
+let courtSlots = [null, null, null, null, null];
 
-// Tap-to-place selection
-let selectedPid = null;
+// Selection for tap-to-place
+let selectedPlayerId = null;
 
-// Game event log (subs, quarter changes, etc.)
+// Event log
 let eventLog = [];
-let scoreLocal=0; let scoreAway=0; let scoreTimeline=[];
+let pointsPending = 0;
 
+// ========================
+// UTILITY FUNCTIONS
+// ========================
+function formatTime(seconds) {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
 
-/* =======================
-   Persistence
-======================= */
-function saveState(){
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function saveGameState() {
   const state = {
-    v:3,
-    quarter, qClock, gameElapsed,
+    version: 4,
+    currentQuarter,
+    quarterClock,
+    gameElapsed,
     courtSlots,
-    players: players.map(p=>({
-      id:p.id, name:p.name, fouls:p.fouls, foulStatus:p.foulStatus,
-      courtTotal:p.courtTotal, benchTotal:p.benchTotal, stint:p.stint,
-      stintLimits:p.stintLimits, foulLimits:p.foulLimits,
-      positions:p.positions,
-      fatigue:p.fatigue,
-      qCourt:p.qCourt,
-      qBench:p.qBench,
-      maxStint:p.maxStint,
-      stintsCount:p.stintsCount,
-      courtFoulsStart:p.courtFoulsStart,
-      stintType:p.stintType,
-      stintStartLabel:p.stintStartLabel,
-      stintStartElapsedInQ:p.stintStartElapsedInQ
+    homeScore,
+    awayScore,
+    quarterScores,
+    players: players.map(p => ({
+      id: p.id,
+      number: p.number,
+      name: p.name,
+      positions: p.positions,
+      fouls: p.fouls,
+      foulStatus: p.foulStatus,
+      points: p.points,
+      courtTotal: p.courtTotal,
+      benchTotal: p.benchTotal,
+      stint: p.stint,
+      stintLimits: p.stintLimits,
+      foulLimits: p.foulLimits
     })),
     eventLog
   };
-  localStorage.setItem("rm_state_v3", JSON.stringify(state));
+  localStorage.setItem("basketball_tracker_state", JSON.stringify(state));
 }
 
-function loadState(){
-  // Try v3 first, then v2 (migrate)
-  const keys = ["rm_state_v3","rm_state_v2"];
-  for(const key of keys){
-    try{
-      const raw = localStorage.getItem(key);
-      if(!raw) continue;
-      const s = JSON.parse(raw);
-      if(!s) continue;
-
-      quarter = clamp(Number(s.quarter)||1,1,4);
-      qClock = clamp(Number(s.qClock)||QT_TIME,0,QT_TIME);
-      gameElapsed = Math.max(0, Number(s.gameElapsed)||0);
-
-      if(Array.isArray(s.courtSlots) && s.courtSlots.length===5){
-        courtSlots = s.courtSlots.map(x => (x===null ? null : clamp(Number(x),0,players.length-1)));
-      }
-
-      if(Array.isArray(s.players) && s.players.length===players.length){
-        for(const sp of s.players){
-          const p = players[sp.id];
-          if(!p) continue;
-          p.name = String(sp.name ?? p.name);
-          p.fouls = clamp(Number(sp.fouls)||0,0,5);
-          p.foulStatus = (sp.foulStatus==="forceBad"||sp.foulStatus==="forceSafe") ? sp.foulStatus : "auto";
-          p.courtTotal = clamp(Number(sp.courtTotal)||0,0,1e9);
-          p.benchTotal = clamp(Number(sp.benchTotal)||0,0,1e9);
-          p.stint = clamp(Number(sp.stint)||0,0,1e9);
-
-          const sl = sp.stintLimits || {};
-          p.stintLimits = {
-            green: clamp(Number(sl.green)||DEFAULT_STINT.green,0,1800),
-            orange: clamp(Number(sl.orange)||DEFAULT_STINT.orange,0,1800)
-          };
-          if(p.stintLimits.orange < p.stintLimits.green + 5) p.stintLimits.orange = p.stintLimits.green + 5;
-
-          const fl = sp.foulLimits || {};
-          p.foulLimits = {
-            1: clamp(Number(fl[1])||DEFAULT_FOULS[1],0,5),
-            2: clamp(Number(fl[2])||DEFAULT_FOULS[2],0,5),
-            3: clamp(Number(fl[3])||DEFAULT_FOULS[3],0,5),
-            4: clamp(Number(fl[4])||DEFAULT_FOULS[4],0,5),
-          };
-
-          // positions (v3) or fallback to default
-          if(Array.isArray(sp.positions)){
-            p.positions = sp.positions.slice(0,2).map(String);
-            // sanitize
-            p.positions = p.positions.filter(x=>POS_OPTIONS.includes(x));
-            if(p.positions.length===0) p.positions=["Base"];
-          }
-        }
-      }
-      // load event log
-      if(Array.isArray(s.eventLog)) eventLog = s.eventLog;
-      else eventLog = [];
-
-      // If loaded from v2, save into v3
-      if(key==="rm_state_v2") saveState();
-      return true;
-    }catch(e){
-      // keep trying
+function loadGameState() {
+  try {
+    const saved = localStorage.getItem("basketball_tracker_state");
+    if (!saved) return false;
+    
+    const state = JSON.parse(saved);
+    if (!state || state.version !== 4) return false;
+    
+    currentQuarter = state.currentQuarter || 1;
+    quarterClock = state.quarterClock || QUARTER_TIME;
+    gameElapsed = state.gameElapsed || 0;
+    courtSlots = state.courtSlots || [null, null, null, null, null];
+    homeScore = state.homeScore || 0;
+    awayScore = state.awayScore || 0;
+    quarterScores = state.quarterScores || { home: [0,0,0,0], away: [0,0,0,0] };
+    
+    if (state.players && state.players.length === players.length) {
+      state.players.forEach(sp => {
+        const p = players[sp.id];
+        if (!p) return;
+        
+        p.number = sp.number || p.number;
+        p.name = sp.name || p.name;
+        p.positions = sp.positions || p.positions;
+        p.fouls = sp.fouls || p.fouls;
+        p.foulStatus = sp.foulStatus || p.foulStatus;
+        p.points = sp.points || p.points;
+        p.courtTotal = sp.courtTotal || p.courtTotal;
+        p.benchTotal = sp.benchTotal || p.benchTotal;
+        p.stint = sp.stint || p.stint;
+        p.stintLimits = sp.stintLimits || p.stintLimits;
+        p.foulLimits = sp.foulLimits || p.foulLimits;
+      });
     }
+    
+    eventLog = state.eventLog || [];
+    return true;
+  } catch (e) {
+    console.error("Failed to load game state:", e);
+    return false;
   }
-  return false;
-}
-loadState();
-
-/* =======================
-   Membership helpers
-======================= */
-function onCourtCount(){ return courtSlots.filter(x=>x!==null).length; }
-function isOnCourt(pid){ return courtSlots.includes(pid); }
-function benchIds(){
-  const set = new Set(courtSlots.filter(x=>x!==null));
-  return players.map(p=>p.id).filter(id=>!set.has(id));
 }
 
-/* =======================
-   Stint / fouls logic
-======================= */
-function stintBucket(p){
-  const g = p.stintLimits.green;
-  const o = p.stintLimits.orange;
-  if(p.stint < g) return "fillGreen";
-  if(p.stint < o) return "fillOrange";
-  return "fillRed";
-}
-function effectiveFoulLimit(p){ return p.foulLimits[quarter]; }
-
-function foulLevel(p){
-  if(p.foulStatus==="forceBad") return "bad";
-  if(p.foulStatus==="forceSafe") return "safe";
-  const lim = effectiveFoulLimit(p);
-  if(p.fouls >= lim) return "bad";
-  if(p.fouls === lim - 1) return "warn";
-  return "safe";
-}
-
-/* =======================
-   Position compatibility
-======================= */
-function positionFitScore(slotRole, player){
-  // Higher is better for recommendation.
-  // Exact role match is best.
-  if(slotRole === "Joker") return 2; // Joker slot is flexible
-  if(player.positions.includes(slotRole)) return 2; // perfect fit
-  if(player.positions.includes("Joker")) return -2; // allowed fallback, but strongly discouraged
-  return -99; // not allowed
+// ========================
+// SCORE MANAGEMENT
+// ========================
+function updateScores() {
+  // Update team scores
+  document.getElementById('scoreHome').textContent = homeScore;
+  document.getElementById('scoreAway').textContent = awayScore;
+  
+  // Update quarter scores
+  document.getElementById('q1Home').textContent = quarterScores.home[0];
+  document.getElementById('q1Away').textContent = quarterScores.away[0];
+  document.getElementById('q2Home').textContent = quarterScores.home[1];
+  document.getElementById('q2Away').textContent = quarterScores.away[1];
+  document.getElementById('q3Home').textContent = quarterScores.home[2];
+  document.getElementById('q3Away').textContent = quarterScores.away[2];
+  document.getElementById('q4Home').textContent = quarterScores.home[3];
+  document.getElementById('q4Away').textContent = quarterScores.away[3];
+  
+  // Update totals
+  document.getElementById('totalHome').textContent = homeScore;
+  document.getElementById('totalAway').textContent = awayScore;
 }
 
-function slotRoleAllowsPlayer(slotRole, player){
-
-  // Player with Joker can fill any
-  if(player.positions.includes("Joker")) return true;
-  // Joker slot accepts any (flex)
-  if(slotRole === "Joker") return true;
-  return player.positions.includes(slotRole);
+function addPoints(points, playerId) {
+  if (playerId === 'rival') {
+    awayScore += points;
+    quarterScores.away[currentQuarter - 1] += points;
+  } else {
+    const player = players[playerId];
+    if (!player) return;
+    
+    player.points += points;
+    homeScore += points;
+    quarterScores.home[currentQuarter - 1] += points;
+    
+    // Log the event
+    eventLog.push({
+      type: 'points',
+      timestamp: Date.now(),
+      quarter: currentQuarter,
+      time: formatTime(QUARTER_TIME - quarterClock),
+      playerId: playerId,
+      playerName: player.name,
+      points: points,
+      totalPoints: player.points
+    });
+  }
+  
+  updateScores();
+  saveGameState();
 }
 
-/* =======================
-   Cards
-======================= */
-function playerCardHTML(p){
-  const on = isOnCourt(p.id);
-  const alertClass = on ? (p.stint >= p.stintLimits.orange ? 'pulseHot' : (p.stint >= p.stintLimits.green ? 'pulseWarm' : ''))
-                       : (p.stint >= p.stintLimits.orange ? 'pulseBench' : (p.stint >= p.stintLimits.green ? 'pulseBench' : ''));
-
-  const lvl = foulLevel(p);
-  const lim = effectiveFoulLimit(p);
-  const pill = lvl==="bad" ? `<span class="pill bad">Fouls: ${p.fouls} / ${lim} 🔴</span>` :
-               lvl==="warn" ? `<span class="pill warn">Fouls: ${p.fouls} / ${lim} 🟠</span>` :
-                              `<span class="pill">Fouls: ${p.fouls} / ${lim} ✅</span>`;
-
-  return `
-    <div class="pcard ${isOnCourt(p.id)?"onCourt":""} ${stintBucket(p)} ${alertClass} ${selectedPid===p.id?"selected":""}" draggable="true" data-pid="${p.id}">
-      <div class="nameRow">
+function openPointsModal(points) {
+  pointsPending = points;
+  document.getElementById('pointsTitle').textContent = `Who scored ${points} points?`;
+  
+  const list = document.getElementById('pointsPlayerList');
+  list.innerHTML = '';
+  
+  courtSlots.forEach((playerId, index) => {
+    if (playerId === null) return;
+    
+    const player = players[playerId];
+    const card = document.createElement('div');
+    card.className = 'player-card';
+    card.innerHTML = `
+      <div class="player-header">
         <div>
-          <div class="name">${p.name}</div>
-          <div class="posTags">${p.positions.map(x=>`<span class="posTag">${x}</span>`).join("")}</div>
-        </div>
-        <button class="iconBtn editBtn" title="Edit">Edit</button>
-      </div>
-
-      <div class="meta">
-        <div class="line"><span class="small">⏱️ Stint</span><b>${fmt(p.stint)}</b></div>
-        <div class="line"><span class="small">🏀 Pista</span><span>${fmt(p.courtTotal)}</span></div>
-        <div class="line"><span class="small">🪑 Banco</span><span>${fmt(p.benchTotal)}</span></div>
-        <div class="line">${pill}</div>
-
-        <div class="line">
-          <span class="small">Faltas</span>
-          <div class="fBtns">
-            <button class="fPlus" title="Add foul">+</button>
-            <button class="fMinus" title="Remove foul">-</button>
-            <button class="forceBad" title="Force 🔴">🔴</button>
-            <button class="forceSafe" title="Force ✅">✅</button>
-            <button class="forceAuto" title="Back to AUTO">↺</button>
-          </div>
+          <div class="player-name">${player.name}</div>
+          <div class="player-number">#${player.number}</div>
         </div>
       </div>
-    </div>
-  `;
-}
-
-function playerCardHTML_Compact(p, slotRole){
-  const on = isOnCourt(p.id);
-  const alertClass = on ? (p.stint >= p.stintLimits.orange ? 'pulseHot' : (p.stint >= p.stintLimits.green ? 'pulseWarm' : ''))
-                       : (p.stint >= p.stintLimits.orange ? 'pulseBench' : (p.stint >= p.stintLimits.green ? 'pulseBench' : ''));
-
-  const lvl = foulLevel(p);
-  const lim = effectiveFoulLimit(p);
-  const pill = (lvl==="bad" ? `🔴 ${p.fouls}/${lim}` : lvl==="warn" ? `🟠 ${p.fouls}/${lim}` : `✅ ${p.fouls}/${lim}`);
-
-  return `
-    <div class="pcard compact ${isOnCourt(p.id)?"onCourt":""} ${stintBucket(p)} ${alertClass} ${selectedPid===p.id?"selected":""}" draggable="true" data-pid="${p.id}">
-      <div class="nameRow">
-        <div>
-          <div class="name">${p.name}</div>
-          <div class="posTags">
-            <span class="posTag">${slotRole}</span>
-            ${p.positions.map(x=>`<span class="posTag">${x}</span>`).join("")}
-          </div>
-        </div>
-        <button class="iconBtn editBtn" title="Edit">Edit</button>
+      <div class="stat-item">
+        <div class="stat-label">POINTS</div>
+        <div class="stat-value points">${player.points}</div>
       </div>
-
-      <div class="meta">
-        <div class="line"><span class="small">⏱️ Stint</span><b>${fmt(p.stint)}</b></div>
-        <div class="line"><span class="small">🏀/🪑</span><span>${fmt(p.courtTotal)} | ${fmt(p.benchTotal)}</span></div>
-        <div class="line"><span class="small">Faltas</span><b>${pill}</b></div>
-
-        <div class="line">
-          <span class="small"></span>
-          <div class="fBtns">
-            <button class="fPlus" title="Add foul">+</button>
-            <button class="fMinus" title="Remove foul">-</button>
-            <button class="forceBad" title="Force 🔴">🔴</button>
-            <button class="forceSafe" title="Force ✅">✅</button>
-            <button class="forceAuto" title="Back to AUTO">↺</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-/* =======================
-   Lists + recommendations
-======================= */
-function updateFoulLists(){
-  const safe = document.getElementById("fSafe");
-  const warn = document.getElementById("fWarn");
-  const bad  = document.getElementById("fBad");
-  safe.innerHTML=""; warn.innerHTML=""; bad.innerHTML="";
-
-  const arr = [...players].sort((a,b)=>b.fouls-a.fouls);
-  for(const p of arr){
-    const li = `<li>${p.name} (${p.fouls})</li>`;
-    const lvl = foulLevel(p);
-    if(lvl==="bad") bad.innerHTML += li;
-    else if(lvl==="warn") warn.innerHTML += li;
-    else safe.innerHTML += li;
-  }
-}
-
-function riskScoreOnCourt(p){
-  let score = 0;
-  const lvl = foulLevel(p);
-  if(lvl==="bad") score += 6;
-  else if(lvl==="warn") score += 3;
-
-  // stint pressure
-  if(p.stint >= p.stintLimits.orange) score += 3.5;
-  else if(p.stint >= p.stintLimits.green) score += 2;
-
-  // accumulated fatigue (scaled)
-  // typical values: 0-25ish
-  score += Math.min(6, p.fatigue / 4);
-
-  return score;
-}
-
-function readinessScoreBench(p){
-  let score = 0;
-
-  // waited time on bench (stint)
-  if(p.stint >= p.stintLimits.orange) score += 2.5;
-  else if(p.stint >= p.stintLimits.green) score += 1.5;
-
-  // rest this quarter
-  score += Math.min(3, p.qBench / 120);
-
-  // low fatigue is good
-  score += Math.min(3, Math.max(0, (10 - p.fatigue)) / 3);
-
-  // fouls penalty
-  const lvl = foulLevel(p);
-  if(lvl==="bad") score -= 4;
-  else if(lvl==="warn") score -= 2;
-
-  return score;
-}
-
-function updateRecommendations(){
-  const ul = document.getElementById("recoList");
-  ul.innerHTML = "";
-
-  const bench = benchIds().map(id=>players[id]);
-  const recos = [];
-
-  for(let slot=0; slot<5; slot++){
-    const outId = courtSlots[slot];
-    if(outId===null) continue;
-
-    const slotRole = SLOT_ROLES[slot];
-    const outP = players[outId];
-    const outRisk = riskScoreOnCourt(outP);
-
-    if(outRisk < 3) continue;
-
-    const candidates = bench
-      .filter(p=>slotRoleAllowsPlayer(slotRole,p))
-      .map(p=>({
-        p,
-        fit: positionFitScore(slotRole,p),
-        score: readinessScoreBench(p) + positionFitScore(slotRole,p)*2.5
-      }))
-      .sort((a,b)=>b.score-a.score);
-
-    if(candidates.length===0) continue;
-
-    const best = candidates[0];
-    const reason = [];
-
-    const outLvl = foulLevel(outP);
-    if(outLvl==="bad") reason.push("muchas faltas");
-    else if(outLvl==="warn") reason.push("al límite de faltas");
-
-    if(outP.stint >= outP.stintLimits.orange) reason.push("cansancio (stint rojo)");
-    else if(outP.stint >= outP.stintLimits.green) reason.push("stint largo");
-
-    if(best.p.stint >= best.p.stintLimits.green) reason.push("suplente lleva tiempo en banquillo");
-
-    recos.push({
-      text: `Cambiar ${outP.name} (${slotRole}) → meter ${best.p.name} (${best.p.positions.join("/")})`,
-      reason: reason.slice(0,2).join(" + "),
-      priority: outRisk + best.score
-    });
-  }
-
-  recos.sort((a,b)=>b.priority-a.priority).slice(0,6).forEach(r=>{
-    ul.innerHTML += `<li><b>${r.text}</b><div class="small">${r.reason}</div></li>`;
+    `;
+    card.onclick = () => {
+      addPoints(pointsPending, playerId);
+      closePointsModal();
+    };
+    list.appendChild(card);
   });
+  
+  document.getElementById('pointsModal').classList.add('show');
+}
 
-  if(ul.innerHTML.trim()===""){
-    ul.innerHTML = `<li><span class="small">Sin cambios urgentes ahora mismo.</span></li>`;
+function closePointsModal() {
+  document.getElementById('pointsModal').classList.remove('show');
+  pointsPending = 0;
+}
+
+function addPointsToRival() {
+  addPoints(pointsPending, 'rival');
+  closePointsModal();
+}
+
+// ========================
+// PLAYER MANAGEMENT
+// ========================
+function isOnCourt(playerId) {
+  return courtSlots.includes(playerId);
+}
+
+function getBenchPlayers() {
+  const courtSet = new Set(courtSlots.filter(id => id !== null));
+  return players.filter(p => !courtSet.has(p.id));
+}
+
+function getStintClass(player) {
+  if (player.stint < player.stintLimits.green) return 'fillGreen';
+  if (player.stint < player.stintLimits.orange) return 'fillOrange';
+  return 'fillRed';
+}
+
+function getFoulLevel(player) {
+  if (player.foulStatus === 'forceBad') return 'bad';
+  if (player.foulStatus === 'forceSafe') return 'safe';
+  
+  const limit = player.foulLimits[currentQuarter] || 5;
+  if (player.fouls >= limit) return 'bad';
+  if (player.fouls === limit - 1) return 'warn';
+  return 'safe';
+}
+
+// ========================
+// RENDERING
+// ========================
+function renderPlayerCard(player, compact = false) {
+  const onCourt = isOnCourt(player.id);
+  const foulLevel = getFoulLevel(player);
+  const stintClass = getStintClass(player);
+  const foulLimit = player.foulLimits[currentQuarter] || 5;
+  
+  let foulLevelText = '';
+  let foulLevelClass = '';
+  switch (foulLevel) {
+    case 'safe': foulLevelText = '✅ SAFE'; foulLevelClass = 'safe'; break;
+    case 'warn': foulLevelText = '🟠 WARN'; foulLevelClass = 'warn'; break;
+    case 'bad': foulLevelText = '🔴 DANGER'; foulLevelClass = 'bad'; break;
+  }
+  
+  const animationClass = onCourt 
+    ? (player.stint >= player.stintLimits.orange ? 'pulseHot' : 
+       (player.stint >= player.stintLimits.green ? 'pulseWarm' : ''))
+    : (player.stint >= player.stintLimits.orange ? 'pulseBench' : '');
+  
+  const selectedClass = selectedPlayerId === player.id ? 'selected' : '';
+  
+  if (compact) {
+    return `
+      <div class="player-card ${onCourt ? 'on-court' : ''} ${stintClass} ${animationClass} ${selectedClass}" 
+           draggable="true" data-pid="${player.id}">
+        <div class="player-header">
+          <div>
+            <div class="player-name">${player.name}</div>
+            <div class="player-number">#${player.number}</div>
+          </div>
+          <button class="action-btn edit" onclick="editPlayer(${player.id})">Edit</button>
+        </div>
+        
+        <div class="player-stats">
+          <div class="stat-item">
+            <div class="stat-label">STINT</div>
+            <div class="stat-value">${formatTime(player.stint)}</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">PTS</div>
+            <div class="stat-value points">${player.points}</div>
+          </div>
+        </div>
+        
+        <div class="player-fouls">
+          <div class="foul-status">
+            <div class="foul-count">Fouls: ${player.fouls}/${foulLimit}</div>
+            <div class="foul-level ${foulLevelClass}">${foulLevelText}</div>
+          </div>
+        </div>
+        
+        <div class="player-actions">
+          <button class="action-btn foul" onclick="adjustFoul(${player.id}, 1)">+ Foul</button>
+          <button class="action-btn" onclick="adjustFoul(${player.id}, -1)">- Foul</button>
+        </div>
+      </div>
+    `;
+  } else {
+    return `
+      <div class="player-card ${onCourt ? 'on-court' : ''} ${stintClass} ${animationClass} ${selectedClass}" 
+           draggable="true" data-pid="${player.id}">
+        <div class="player-header">
+          <div>
+            <div class="player-name">${player.name}</div>
+            <div class="player-number">#${player.number}</div>
+            <div class="player-positions">
+              ${player.positions.map(pos => `<span class="position-tag">${pos}</span>`).join('')}
+            </div>
+          </div>
+          <button class="action-btn edit" onclick="editPlayer(${player.id})">Edit</button>
+        </div>
+        
+        <div class="player-stats">
+          <div class="stat-item">
+            <div class="stat-label">COURT</div>
+            <div class="stat-value">${formatTime(player.courtTotal)}</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">BENCH</div>
+            <div class="stat-value">${formatTime(player.benchTotal)}</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">STINT</div>
+            <div class="stat-value">${formatTime(player.stint)}</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">PTS</div>
+            <div class="stat-value points">${player.points}</div>
+          </div>
+        </div>
+        
+        <div class="player-fouls">
+          <div class="foul-status">
+            <div class="foul-count">Fouls: ${player.fouls}/${foulLimit}</div>
+            <div class="foul-level ${foulLevelClass}">${foulLevelText}</div>
+          </div>
+        </div>
+        
+        <div class="player-actions">
+          <button class="action-btn foul" onclick="adjustFoul(${player.id}, 1)">+ Foul</button>
+          <button class="action-btn" onclick="adjustFoul(${player.id}, -1)">- Foul</button>
+          <button class="action-btn" onclick="forceFoulStatus(${player.id}, 'safe')">✅</button>
+          <button class="action-btn" onclick="forceFoulStatus(${player.id}, 'bad')">🔴</button>
+          <button class="action-btn" onclick="forceFoulStatus(${player.id}, 'auto')">AUTO</button>
+        </div>
+      </div>
+    `;
   }
 }
 
-/* =======================
-   Render
-======================= */
-
-function updateHintBar(){
-  const bar = document.getElementById("hintBar");
-  const chip = document.getElementById("selChip");
-  if(!bar || !chip) return;
-
-  if(selectedPid===null){
-    bar.style.display = "none";
-    chip.textContent = "Seleccionado: -";
-  }else{
-    bar.style.display = "flex";
-    chip.textContent = "Seleccionado: " + players[selectedPid].name;
-  }
-}
-
-function clearSelection(){
-  selectedPid = null;
-  updateHintBar();
-  render();
-}
-
-function toggleSelect(pid){
-  if(selectedPid === pid) selectedPid = null;
-  else selectedPid = pid;
-  updateHintBar();
-  render();
-}
-
-function render(){
-  document.getElementById("quarterClock").textContent = fmt(qClock);
-  document.getElementById("quarterBtn").textContent = "Q"+quarter;
-  document.getElementById("onCountBadge").textContent = `On court: ${onCourtCount()}/5`;
-
-  // Court slots: compact cards
-  document.querySelectorAll(".slot").forEach(slotEl=>{
-    const idx = Number(slotEl.dataset.slot);
-    const pid = courtSlots[idx];
-    slotEl.innerHTML = "";
-
-    if(pid===null){
-      const ph = document.createElement("div");
-      ph.className="placeholder";
-      ph.textContent = SLOT_ROLES[idx].toUpperCase();
-      slotEl.appendChild(ph);
-    }else{
-      const p = players[pid];
-      slotEl.insertAdjacentHTML("beforeend", playerCardHTML_Compact(p, SLOT_ROLES[idx]));
+function render() {
+  // Update game info
+  document.getElementById('quarterDisplay').textContent = `Q${currentQuarter}`;
+  document.getElementById('gameClock').textContent = formatTime(quarterClock);
+  
+  const onCourtCount = courtSlots.filter(id => id !== null).length;
+  document.getElementById('onCourtBadge').textContent = `On Court: ${onCourtCount}/5`;
+  
+  // Render court slots
+  const courtGrid = document.getElementById('courtGrid');
+  courtGrid.innerHTML = '';
+  
+  courtSlots.forEach((playerId, index) => {
+    const slot = document.createElement('div');
+    slot.className = `court-slot ${index === 0 ? 'center' : ''}`;
+    slot.dataset.slot = index;
+    
+    if (playerId === null) {
+      slot.innerHTML = `<div class="placeholder">${SLOT_ROLES[index]}</div>`;
+    } else {
+      slot.innerHTML = renderPlayerCard(players[playerId], true);
     }
+    
+    // Add drag and drop events
+    slot.addEventListener('dragover', e => e.preventDefault());
+    slot.addEventListener('drop', handleDrop);
+    slot.addEventListener('click', handleSlotClick);
+    
+    courtGrid.appendChild(slot);
   });
-
-  // Bench: full cards
-  const benchEl = document.getElementById("benchList");
-  benchEl.innerHTML = "";
-  for(const id of benchIds()){
-    benchEl.insertAdjacentHTML("beforeend", playerCardHTML(players[id]));
-  }
-
-  // Attach events to all cards
-  document.querySelectorAll(".pcard").forEach(card=>{
-    const pid = Number(card.dataset.pid);
-
-    card.addEventListener("dragstart", e=>{
-      e.dataTransfer.setData("text/plain", String(pid));
-      card.classList.add("dragging");
-    });
-    card.addEventListener("dragend", ()=> card.classList.remove("dragging"));
-
-    const editBtn = card.querySelector(".editBtn");
-    if(editBtn){
-      editBtn.onclick = (e)=>{ e.stopPropagation(); openPlayerModal(pid); };
-    }
-
-    // Fouls
-    card.querySelector(".fPlus").onclick  = (e)=>{ e.stopPropagation(); players[pid].fouls=clamp(players[pid].fouls+1,0,5); saveState(); render(); };
-    card.querySelector(".fMinus").onclick = (e)=>{ e.stopPropagation(); players[pid].fouls=clamp(players[pid].fouls-1,0,5); saveState(); render(); };
-    card.querySelector(".forceBad").onclick  = (e)=>{ e.stopPropagation(); players[pid].foulStatus="forceBad"; saveState(); render(); };
-    card.querySelector(".forceSafe").onclick = (e)=>{ e.stopPropagation(); players[pid].foulStatus="forceSafe"; saveState(); render(); };
-    card.querySelector(".forceAuto").onclick = (e)=>{ e.stopPropagation(); players[pid].foulStatus="auto"; saveState(); render(); };
-    // Tap-to-place: tap card to select (ignore button clicks)
-    card.addEventListener("click", (e)=>{
-      if(e.target.closest("button")) return;
-      toggleSelect(pid);
-    });
-
+  
+  // Render bench
+  const benchGrid = document.getElementById('benchGrid');
+  benchGrid.innerHTML = '';
+  
+  getBenchPlayers().forEach(player => {
+    const card = document.createElement('div');
+    card.innerHTML = renderPlayerCard(player, false);
+    benchGrid.appendChild(card);
   });
-
+  
+  // Update selection hint
+  updateSelectionHint();
+  
+  // Update foul lists
   updateFoulLists();
+  
+  // Update recommendations
   updateRecommendations();
-
-  const toggleBtn = document.getElementById("toggle");
-  toggleBtn.disabled = (!running && onCourtCount()!==5);
+  
+  // Update play button state
+  document.getElementById('playBtn').disabled = !gameRunning && onCourtCount !== 5;
 }
 
-/* =======================
-   Drag & drop: drop on slot => swap/enter (resets stint)
-======================= */
-
-
-function setPlayerOnCourt(pid, slotIndex){
-  const slotRole = SLOT_ROLES[slotIndex];
-  const currentSlot = courtSlots.indexOf(pid);
-  const outPid = courtSlots[slotIndex];
-
-  const elapsedInQ = Math.max(0, QT_TIME - qClock);
-
-  function startStint(p, type){
-    p.stintType = type;
-    p.stintStartLabel = qLabel();
-    p.stintStartElapsedInQ = elapsedInQ;
-    if(type==="court"){
-      p.courtFoulsStart = p.fouls;
+// ========================
+// GAME LOGIC
+// ========================
+function gameTick(timestamp) {
+  if (!gameRunning) return;
+  
+  const deltaTime = (timestamp - lastTimestamp) / 1000;
+  lastTimestamp = timestamp;
+  
+  gameElapsed += deltaTime;
+  quarterClock = clamp(quarterClock - deltaTime, 0, QUARTER_TIME);
+  
+  // Update player times
+  const onCourtSet = new Set(courtSlots.filter(id => id !== null));
+  
+  players.forEach(player => {
+    const onCourt = onCourtSet.has(player.id);
+    
+    // Update stint time
+    player.stint += deltaTime;
+    
+    // Update totals
+    if (onCourt) {
+      player.courtTotal += deltaTime;
+      player.qCourt += deltaTime;
+    } else {
+      player.benchTotal += deltaTime;
+      player.qBench += deltaTime;
+    }
+    
+    // Update max stint
+    player.maxStint = Math.max(player.maxStint, player.stint);
+    
+    // Update fatigue
+    const build = onCourt ? deltaTime * (1.0 + 0.6 * (player.qCourt / 300)) : 0;
+    const recover = !onCourt ? deltaTime * (0.85 + 0.25 * (player.qBench / 180)) : 0;
+    player.fatigue = Math.max(0, player.fatigue + build - recover);
+  });
+  
+  // Check for quarter end
+  if (quarterClock <= 0) {
+    quarterClock = 0;
+    gameRunning = false;
+    if (currentQuarter < 4) {
+      setTimeout(() => {
+        if (confirm(`Quarter ${currentQuarter} ended. Move to Q${currentQuarter + 1}?`)) {
+          nextQuarter();
+        }
+      }, 100);
+    } else {
+      alert('Game ended!');
     }
   }
-
-  // If player already on court -> swap
-  if(currentSlot !== -1){
-    const other = courtSlots[slotIndex];
-    courtSlots[slotIndex] = pid;
-    courtSlots[currentSlot] = other;
-
-    const pidPrevStint = players[pid].stint;
-    players[pid].maxStint = Math.max(players[pid].maxStint, pidPrevStint);
-    players[pid].stintsCount += 1;
-    players[pid].stint = 0;
-    startStint(players[pid], "court");
-
-    if(other !== null){
-      const otherPrev = players[other].stint;
-      players[other].maxStint = Math.max(players[other].maxStint, otherPrev);
-      players[other].stintsCount += 1;
-      players[other].stint = 0;
-      startStint(players[other], "court");
-    }
-
-    logEvent("swap", { slot:slotIndex, role:slotRole, a:pid, b:other });
-    saveState(); render();
-    return;
-  }
-
-  // Entering from bench into this slot
-  courtSlots[slotIndex] = pid;
-
-  const inBenchStint = players[pid].stint;
-  players[pid].maxStint = Math.max(players[pid].maxStint, players[pid].stint);
-  players[pid].stintsCount += 1;
-  players[pid].stint = 0;
-  startStint(players[pid], "court");
-
-  let outCourtStint = null;
-  let outFoulsThisStint = null;
-  let outFoulsTotal = null;
-  if(outPid !== null){
-    outCourtStint = players[outPid].stint;
-    outFoulsThisStint = Math.max(0, players[outPid].fouls - (players[outPid].courtFoulsStart||0));
-    outFoulsTotal = players[outPid].fouls;
-
-    players[outPid].maxStint = Math.max(players[outPid].maxStint, players[outPid].stint);
-    players[outPid].stintsCount += 1;
-    players[outPid].stint = 0;
-    startStint(players[outPid], "bench");
-  }
-
-  logEvent("sub", {
-    slot:slotIndex,
-    role:slotRole,
-    in:pid,
-    out:outPid,
-    inBenchStint: Number(inBenchStint.toFixed(2)),
-    outCourtStint: outCourtStint===null ? null : Number(outCourtStint.toFixed(2)),
-    outFoulsThisStint,
-    outFoulsTotal
-  });
-
-  saveState(); render();
-}
-
-
-document.querySelectorAll(".slot").forEach(slotEl=>{
-  slotEl.addEventListener("dragover", e=> e.preventDefault());
-
-  // Tap-to-place: tap slot to place selected player
-  slotEl.addEventListener("click", ()=>{
-    const slotIndex = Number(slotEl.dataset.slot);
-    if(selectedPid===null) return;
-    setPlayerOnCourt(selectedPid, slotIndex);
-    selectedPid = null;
-    updateHintBar();
-    render();
-  });
-
-  slotEl.addEventListener("drop", e=>{
-    e.preventDefault();
-    const pid = Number(e.dataTransfer.getData("text/plain"));
-    const slotIndex = Number(slotEl.dataset.slot);
-    if(Number.isNaN(pid)) return;
-    setPlayerOnCourt(pid, slotIndex);
-  });
-});
-
-/* =======================
-   Clock tick
-======================= */
-function tick(now){
-  if(!running) return;
-  const dt = (now-last)/1000;
-  last = now;
-
-  gameElapsed += dt;
-  qClock = clamp(qClock - dt, 0, QT_TIME);
-
-
-  const onSet = new Set(courtSlots.filter(x=>x!==null));
-  for(const p of players){
-    const on = onSet.has(p.id);
-
-    // segment timer (stint counts time since last change, whether on court or on bench)
-    p.stint += dt;
-
-    // totals
-    if(on){ p.courtTotal += dt; p.qCourt += dt; }
-    else { p.benchTotal += dt; p.qBench += dt; }
-
-    // Fatigue index (simple, realistic enough):
-    // - builds faster when on court and already has many minutes this quarter
-    // - recovers on bench (slower than build)
-    const build = on ? dt * (1.0 + 0.6 * (p.qCourt/300)) : 0;         // ramps with quarter load
-    const recover = (!on) ? dt * (0.85 + 0.25 * (p.qBench/180)) : 0;  // slightly faster with time rested
-    p.fatigue = Math.max(0, p.fatigue + build - recover);
-
-    // keep maxStint updated (for export) without spamming
-    p.maxStint = Math.max(p.maxStint, p.stint);
-  }
-
-
-  saveState();
+  
+  saveGameState();
   render();
-  requestAnimationFrame(tick);
+  requestAnimationFrame(gameTick);
 }
 
-
-function csvEscape(v){
-  const s = String(v ?? "");
-  if(/[",\n]/.test(s)) return '"' + s.replace(/"/g,'""') + '"';
-  return s;
-}
-function buildExport(){
-  // Summary table
-  const header = [
-    "Player","Positions","Fouls","CourtTotal_s","BenchTotal_s","MaxStint_s","StintsCount","Fatigue","Q_Court_s","Q_Bench_s"
-  ];
-  const rows = [header.join(",")];
-  for(const p of players){
-    rows.push([
-      csvEscape(p.name),
-      csvEscape(p.positions.join("/")),
-      p.fouls,
-      Math.round(p.courtTotal),
-      Math.round(p.benchTotal),
-      Math.round(p.maxStint),
-      p.stintsCount,
-      p.fatigue.toFixed(2),
-      Math.round(p.qCourt),
-      Math.round(p.qBench)
-    ].join(","));
-  }
-
-  // Event log
-  const logHeader = ["label","type","slot","role","in","out","a","b","t"];
-  rows.push("");
-  rows.push("EVENT_LOG");
-  rows.push(logHeader.join(","));
-  for(const ev of eventLog){
-    rows.push([
-      csvEscape(ev.label),
-      csvEscape(ev.type),
-      csvEscape(ev.slot ?? ""),
-      csvEscape(ev.role ?? ""),
-      csvEscape(ev.in ?? ""),
-      csvEscape(ev.out ?? ""),
-      csvEscape(ev.a ?? ""),
-      csvEscape(ev.b ?? ""),
-      csvEscape(new Date(ev.t).toISOString())
-    ].join(","));
-  }
-
-  const csv = rows.join("\n");
-
-  // PLAYER_NARRATIVE
-  const per = {};
-  for(const p of players) per[p.id] = [];
-  for(const ev of eventLog){
-    if(ev.type === 'sub'){
-      const inId = ev.in;
-      const outId = ev.out;
-      const label = ev.label;
-      const elapsed = Math.round(ev.elapsedInQuarter||0);
-      const benchSt = ev.inBenchStint!=null ? Math.round(ev.inBenchStint) : null;
-      if(inId!==null && inId!==undefined){
-        per[inId].push(`ENTRA  ${label} (elapsed ${fmt(elapsed)}) por ${outId===null?'-':players[outId].name}. Stint BANQUILLO: ${benchSt!==null?fmt(benchSt):'-'}. Faltas totales: ${players[inId].fouls}`);
-      }
-      if(outId!==null && outId!==undefined){
-        const outSt = ev.outCourtStint!=null ? fmt(Math.round(ev.outCourtStint)) : '-';
-        const fThis = ev.outFoulsThisStint!=null ? ev.outFoulsThisStint : '-';
-        const fTot = ev.outFoulsTotal!=null ? ev.outFoulsTotal : players[outId].fouls;
-        per[outId].push(`SALE   ${label} (elapsed ${fmt(elapsed)}) por ${players[inId].name}. Stint PISTA: ${outSt}. Faltas en stint: ${fThis} (total ${fTot})`);
-      }
-    }
-    if(ev.type === 'swap'){
-      const a = ev.a, b = ev.b;
-      if(a!=null) per[a].push(`SWAP   ${ev.label} -> cambia de hueco (${ev.role})`);
-      if(b!=null) per[b].push(`SWAP   ${ev.label} -> cambia de hueco (${ev.role})`);
-    }
-  }
-  let narrative = '';
-  for(const p of players){
-    narrative += `${p.name}:\n`;
-    if(per[p.id].length===0) narrative += '  (sin eventos)\n\n';
-    else narrative += per[p.id].map(x=>'  '+x).join('\n') + '\n\n';
-  }
-
-  const jsonData = JSON.stringify({
-    exportedAt: new Date().toISOString(),
-    quarter,
-    qClock,
-    players,
-    courtSlots,
-    eventLog
-  }, null, 2);
-
-  return { csv, jsonData, narrative };
-}
-
-function downloadText(filename, text, mime){
-  const blob = new Blob([text], {type: mime});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url), 1000);
-}
-
-
-/* =======================
-   Controls
-======================= */
-document.getElementById("exportBtn").onclick=()=>{
-  const {csv, jsonData, narrative} = buildExport();
-  const stamp = new Date().toISOString().replace(/[:.]/g,"-");
-  downloadText(`rotations_${stamp}.csv`, csv, "text/csv;charset=utf-8");
-  downloadText(`rotations_${stamp}.json`, jsonData, "application/json;charset=utf-8");
-  downloadText(`rotations_${stamp}.txt`, narrative, "text/plain;charset=utf-8");
-};
-
-document.getElementById("toggle").onclick=()=>{
-  if(!running){
-    if(onCourtCount()!==5){
-      alert("No se puede iniciar: deben estar los 5 jugadores en pista.");
+function toggleGame() {
+  if (!gameRunning) {
+    const onCourtCount = courtSlots.filter(id => id !== null).length;
+    if (onCourtCount !== 5) {
+      alert('Cannot start: need 5 players on court.');
       return;
     }
-    running=true;
-    last=performance.now();
-    requestAnimationFrame(tick);
-  }else{
-    running=false;
-    saveState();
+    gameRunning = true;
+    lastTimestamp = performance.now();
+    requestAnimationFrame(gameTick);
+    document.getElementById('playBtn').textContent = '⏸ PAUSE';
+  } else {
+    gameRunning = false;
+    document.getElementById('playBtn').textContent = '▶ PLAY';
+  }
+  saveGameState();
+}
+
+function nextQuarter() {
+  if (currentQuarter < 4) {
+    currentQuarter++;
+    quarterClock = QUARTER_TIME;
+    
+    // Reset quarter-specific player stats
+    players.forEach(p => {
+      p.qCourt = 0;
+      p.qBench = 0;
+    });
+    
+    eventLog.push({
+      type: 'quarter',
+      timestamp: Date.now(),
+      quarter: currentQuarter
+    });
+    
+    saveGameState();
     render();
   }
-};
+}
 
-document.getElementById("qPlus").onclick=()=>{
-  quarter = clamp(quarter+1,1,4);
-  qClock = QT_TIME;
-  for(const p of players){ p.qCourt=0; p.qBench=0; }
-  logEvent("quarter", { quarter });
-  eventLog = [];
-  logEvent("reset", {});
-  saveState(); render();
-};
-document.getElementById("qMinus").onclick=()=>{
-  quarter = clamp(quarter-1,1,4);
-  qClock = QT_TIME;
-  for(const p of players){ p.qCourt=0; p.qBench=0; }
-  logEvent("quarter", { quarter });
-  saveState(); render();
-};
-
-document.getElementById("resetAll").onclick=()=>{
-  running=false; quarter=1; qClock=QT_TIME;
-  courtSlots=[null,null,null,null,null];
-  for(const p of players){
-    p.name = defaultNames[p.id];
-    p.fouls=0; p.foulStatus="auto";
-    p.courtTotal=0; p.benchTotal=0; p.stint=0;
-    p.stintLimits={ green:DEFAULT_STINT.green, orange:DEFAULT_STINT.orange };
-    p.foulLimits={ ...DEFAULT_FOULS };
-    p.positions=["Base"];
-    p.fatigue=0; p.qCourt=0; p.qBench=0; p.maxStint=0; p.stintsCount=0;
+function prevQuarter() {
+  if (currentQuarter > 1) {
+    currentQuarter--;
+    quarterClock = QUARTER_TIME;
+    saveGameState();
+    render();
   }
-  saveState(); render();
-};
+}
 
-/* =======================
-   Modal: edit player
-======================= */
-let modalPid = null;
+// ========================
+// DRAG & DROP
+// ========================
+function handleDrop(e) {
+  e.preventDefault();
+  const playerId = parseInt(e.dataTransfer.getData('text/plain'));
+  const slotIndex = parseInt(e.target.closest('.court-slot').dataset.slot);
+  
+  if (isNaN(playerId)) return;
+  
+  movePlayerToSlot(playerId, slotIndex);
+}
 
-function renderPosPicker(pid){
-  const wrap = document.getElementById("pmPos");
-  wrap.innerHTML = "";
-  const p = players[pid];
+function handleSlotClick(e) {
+  const slotElement = e.target.closest('.court-slot');
+  if (!slotElement || selectedPlayerId === null) return;
+  
+  const slotIndex = parseInt(slotElement.dataset.slot);
+  movePlayerToSlot(selectedPlayerId, slotIndex);
+  clearSelection();
+}
 
-  POS_OPTIONS.forEach(pos=>{
-    const active = p.positions.includes(pos);
-    const btn = document.createElement("button");
-    btn.className = "iconBtn";
-    btn.textContent = (active ? "✓ " : "") + pos;
-    btn.style.opacity = active ? "1" : ".75";
+function movePlayerToSlot(playerId, slotIndex) {
+  const currentSlot = courtSlots.indexOf(playerId);
+  const outgoingPlayerId = courtSlots[slotIndex];
+  
+  if (currentSlot !== -1) {
+    // Swap positions
+    courtSlots[slotIndex] = playerId;
+    courtSlots[currentSlot] = outgoingPlayerId;
+    
+    // Reset stints for swapped players
+    players[playerId].stint = 0;
+    players[playerId].stintsCount++;
+    if (outgoingPlayerId !== null) {
+      players[outgoingPlayerId].stint = 0;
+      players[outgoingPlayerId].stintsCount++;
+    }
+    
+    eventLog.push({
+      type: 'swap',
+      timestamp: Date.now(),
+      quarter: currentQuarter,
+      time: formatTime(QUARTER_TIME - quarterClock),
+      playerA: playerId,
+      playerB: outgoingPlayerId,
+      slot: slotIndex
+    });
+  } else {
+    // Player entering from bench
+    courtSlots[slotIndex] = playerId;
+    
+    // Reset stint for entering player
+    players[playerId].stint = 0;
+    players[playerId].stintsCount++;
+    
+    // If someone was replaced, send them to bench
+    if (outgoingPlayerId !== null) {
+      players[outgoingPlayerId].stint = 0;
+      players[outgoingPlayerId].stintsCount++;
+      
+      eventLog.push({
+        type: 'sub',
+        timestamp: Date.now(),
+        quarter: currentQuarter,
+        time: formatTime(QUARTER_TIME - quarterClock),
+        in: playerId,
+        out: outgoingPlayerId,
+        slot: slotIndex
+      });
+    }
+  }
+  
+  saveGameState();
+  render();
+}
 
-    btn.onclick = ()=>{
-      const has = p.positions.includes(pos);
-      if(has){
-        p.positions = p.positions.filter(x=>x!==pos);
-      }else{
-        if(p.positions.length>=2){
-          alert("Máximo 2 posiciones por jugador.");
-          return;
-        }
-        p.positions = [...p.positions, pos];
-      }
-      renderPosPicker(pid);
-    };
+// ========================
+// SELECTION MANAGEMENT
+// ========================
+function toggleSelection(playerId) {
+  if (selectedPlayerId === playerId) {
+    selectedPlayerId = null;
+  } else {
+    selectedPlayerId = playerId;
+  }
+  updateSelectionHint();
+  render();
+}
 
-    wrap.appendChild(btn);
+function clearSelection() {
+  selectedPlayerId = null;
+  updateSelectionHint();
+  render();
+}
+
+function updateSelectionHint() {
+  const hint = document.getElementById('selectionHint');
+  const chip = document.getElementById('selectedPlayerChip');
+  
+  if (selectedPlayerId === null) {
+    hint.classList.remove('show');
+  } else {
+    hint.classList.add('show');
+    const player = players[selectedPlayerId];
+    chip.textContent = `Selected: ${player.name}`;
+  }
+}
+
+// ========================
+// FOUL MANAGEMENT
+// ========================
+function adjustFoul(playerId, amount) {
+  const player = players[playerId];
+  player.fouls = clamp(player.fouls + amount, 0, 5);
+  
+  eventLog.push({
+    type: 'foul',
+    timestamp: Date.now(),
+    quarter: currentQuarter,
+    time: formatTime(QUARTER_TIME - quarterClock),
+    playerId: playerId,
+    playerName: player.name,
+    fouls: player.fouls,
+    change: amount
+  });
+  
+  saveGameState();
+  render();
+}
+
+function forceFoulStatus(playerId, status) {
+  const player = players[playerId];
+  player.foulStatus = status;
+  saveGameState();
+  render();
+}
+
+function updateFoulLists() {
+  const safeList = document.getElementById('foulSafeList');
+  const warnList = document.getElementById('foulWarnList');
+  const dangerList = document.getElementById('foulDangerList');
+  
+  safeList.innerHTML = '';
+  warnList.innerHTML = '';
+  dangerList.innerHTML = '';
+  
+  players.sort((a, b) => b.fouls - a.fouls).forEach(player => {
+    const item = `<li>${player.name} (${player.fouls})</li>`;
+    const level = getFoulLevel(player);
+    
+    if (level === 'safe') safeList.innerHTML += item;
+    else if (level === 'warn') warnList.innerHTML += item;
+    else if (level === 'bad') dangerList.innerHTML += item;
   });
 }
 
-function openPlayerModal(pid){
-  modalPid = pid;
-  const p = players[pid];
-
-  document.getElementById("pmTitle").textContent = "Editar: " + p.name;
-  document.getElementById("pmName").value = p.name;
-
-  renderPosPicker(pid);
-
-  document.getElementById("pmGreen").value = p.stintLimits.green;
-  document.getElementById("pmOrange").value = p.stintLimits.orange;
-
-  document.getElementById("pmF1").value = p.foulLimits[1];
-  document.getElementById("pmF2").value = p.foulLimits[2];
-  document.getElementById("pmF3").value = p.foulLimits[3];
-  document.getElementById("pmF4").value = p.foulLimits[4];
-
-  document.getElementById("playerModal").classList.add("show");
-}
-
-function closePlayerModal(){
-  modalPid = null;
-  document.getElementById("playerModal").classList.remove("show");
-}
-
-document.getElementById("pmSave").onclick=()=>{
-  if(modalPid===null) return;
-  const p = players[modalPid];
-
-  const name = String(document.getElementById("pmName").value||"").trim();
-  if(name.length>0) p.name = name;
-
-  const g = clamp(Number(document.getElementById("pmGreen").value)||0,0,1800);
-  let o = clamp(Number(document.getElementById("pmOrange").value)||0,0,1800);
-  if(o < g + 5) o = g + 5;
-
-  p.stintLimits.green = g;
-  p.stintLimits.orange = o;
-
-  p.foulLimits[1] = clamp(Number(document.getElementById("pmF1").value)||0,0,5);
-  p.foulLimits[2] = clamp(Number(document.getElementById("pmF2").value)||0,0,5);
-  p.foulLimits[3] = clamp(Number(document.getElementById("pmF3").value)||0,0,5);
-  p.foulLimits[4] = clamp(Number(document.getElementById("pmF4").value)||0,0,5);
-
-  // Ensure at least 1 position selected
-  if(!Array.isArray(p.positions) || p.positions.length===0){
-    p.positions = ["Base"];
+// ========================
+// RECOMMENDATIONS
+// ========================
+function updateRecommendations() {
+  const list = document.getElementById('recommendationsList');
+  list.innerHTML = '';
+  
+  const recommendations = [];
+  const benchPlayers = getBenchPlayers();
+  
+  courtSlots.forEach((playerId, slotIndex) => {
+    if (playerId === null) return;
+    
+    const player = players[playerId];
+    const foulLevel = getFoulLevel(player);
+    const stintRatio = player.stint / player.stintLimits.orange;
+    
+    // Check if player needs substitution
+    const needsSub = foulLevel === 'bad' || 
+                     foulLevel === 'warn' || 
+                     stintRatio >= 1.0 ||
+                     player.fatigue > 15;
+    
+    if (needsSub) {
+      const slotRole = SLOT_ROLES[slotIndex];
+      const suitableReplacements = benchPlayers.filter(bp => 
+        bp.positions.includes(slotRole) || bp.positions.includes('Joker')
+      );
+      
+      if (suitableReplacements.length > 0) {
+        const reason = [];
+        if (foulLevel === 'bad') reason.push('foul trouble');
+        if (foulLevel === 'warn') reason.push('foul warning');
+        if (stintRatio >= 1.0) reason.push('long stint');
+        if (player.fatigue > 15) reason.push('fatigue');
+        
+        const replacement = suitableReplacements[0];
+        recommendations.push({
+          text: `OUT: ${player.name} (${slotRole}) → IN: ${replacement.name}`,
+          reason: reason.join(', ')
+        });
+      }
+    }
+  });
+  
+  if (recommendations.length === 0) {
+    list.innerHTML = '<li>No urgent changes needed</li>';
+  } else {
+    recommendations.slice(0, 3).forEach(rec => {
+      list.innerHTML += `
+        <li>
+          <strong>${rec.text}</strong>
+          <div class="reason">${rec.reason}</div>
+        </li>
+      `;
+    });
   }
+}
 
-  saveState();
+// ========================
+// PLAYER EDITING
+// ========================
+let editingPlayerId = null;
+
+function editPlayer(playerId) {
+  editingPlayerId = playerId;
+  const player = players[playerId];
+  
+  document.getElementById('playerNameInput').value = player.name;
+  
+  // Update position buttons
+  document.querySelectorAll('.position-btn').forEach(btn => {
+    const pos = btn.dataset.pos;
+    const isSelected = player.positions.includes(pos);
+    btn.style.background = isSelected ? 'var(--blue)' : 'var(--bg)';
+    btn.style.opacity = isSelected ? '1' : '0.7';
+  });
+  
+  document.getElementById('playerModal').classList.add('show');
+}
+
+function closePlayerModal() {
+  document.getElementById('playerModal').classList.remove('show');
+  editingPlayerId = null;
+}
+
+function savePlayer() {
+  if (editingPlayerId === null) return;
+  
+  const player = players[editingPlayerId];
+  const nameInput = document.getElementById('playerNameInput').value.trim();
+  
+  if (nameInput) {
+    player.name = nameInput;
+  }
+  
+  // Get selected positions
+  const selectedPositions = [];
+  document.querySelectorAll('.position-btn').forEach(btn => {
+    const pos = btn.dataset.pos;
+    if (btn.style.background === 'var(--blue)') {
+      selectedPositions.push(pos);
+    }
+  });
+  
+  if (selectedPositions.length > 0) {
+    player.positions = selectedPositions.slice(0, 2);
+  }
+  
+  saveGameState();
   closePlayerModal();
   render();
-};
+}
 
-document.getElementById("playerModal").addEventListener("click", (e)=>{
-  if(e.target.id==="playerModal") closePlayerModal();
+// ========================
+// EVENT LISTENERS
+// ========================
+document.addEventListener('DOMContentLoaded', () => {
+  // Load saved state
+  loadGameState();
+  
+  // Initialize scores
+  updateScores();
+  
+  // Game controls
+  document.getElementById('playBtn').onclick = toggleGame;
+  document.getElementById('undoBtn').onclick = () => {
+    // TODO: Implement undo functionality
+    alert('Undo feature coming soon!');
+  };
+  document.getElementById('stintsBtn').onclick = () => {
+    // TODO: Implement stints management
+    alert('Stints management coming soon!');
+  };
+  document.getElementById('reportBtn').onclick = () => {
+    // TODO: Implement report generation
+    alert('Report generation coming soon!');
+  };
+  
+  // Quarter navigation
+  document.getElementById('quarterDisplay').onclick = () => {
+    const newQuarter = prompt('Enter quarter (1-4):', currentQuarter);
+    if (newQuarter && newQuarter >= 1 && newQuarter <= 4) {
+      currentQuarter = parseInt(newQuarter);
+      quarterClock = QUARTER_TIME;
+      saveGameState();
+      render();
+    }
+  };
+  
+  // Point buttons
+  document.querySelectorAll('.point-btn').forEach(btn => {
+    btn.onclick = () => {
+      const points = parseInt(btn.dataset.points);
+      openPointsModal(points);
+    };
+  });
+  
+  // Clear selection
+  document.getElementById('clearSelectionBtn').onclick = clearSelection;
+  
+  // Player modal
+  document.getElementById('savePlayerBtn').onclick = savePlayer;
+  
+  // Position buttons
+  document.querySelectorAll('.position-btn').forEach(btn => {
+    btn.onclick = function() {
+      const currentBg = this.style.background;
+      const isSelected = currentBg === 'var(--blue)';
+      
+      // Count currently selected positions
+      const selectedCount = Array.from(document.querySelectorAll('.position-btn'))
+        .filter(b => b.style.background === 'var(--blue)').length;
+      
+      if (!isSelected && selectedCount >= 2) {
+        alert('Maximum 2 positions per player.');
+        return;
+      }
+      
+      this.style.background = isSelected ? 'var(--bg)' : 'var(--blue)';
+      this.style.opacity = isSelected ? '0.7' : '1';
+    };
+  });
+  
+  // Close modals when clicking outside
+  document.querySelectorAll('.modal').forEach(modal => {
+    modal.onclick = function(e) {
+      if (e.target === this) {
+        this.classList.remove('show');
+      }
+    };
+  });
+  
+  // Initial render
+  render();
 });
 
-let pendingPts=0;function registerScore(l,a){scoreLocal+=l;scoreAway+=a;scoreTimeline.push({t:gameElapsed,diff:scoreLocal-scoreAway});drawScoreChart();}function openScoreModal(pts){pendingPts=pts;document.getElementById('scoreTitle').textContent=`¿Quién anotó ${pts} pts?`;const list=document.getElementById('scoreList');list.innerHTML='';courtSlots.filter(x=>x!==null).forEach(id=>{const p=players[id];list.innerHTML+=`<button class='pcard' onclick='addPoints(${id})'>${p.name}<br><small>Puntos: ${p.points||0}</small></button>`;});document.getElementById('scoreModal').classList.add('show');}function addPoints(pid){players[pid].points=(players[pid].points||0)+pendingPts;registerScore(pendingPts,0);closeScore();saveState();render();}function addRival(){registerScore(0,pendingPts);closeScore();}function closeScore(){document.getElementById('scoreModal').classList.remove('show');}function drawScoreChart(){const c=document.getElementById('scoreChart');if(!c)return;const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);const mid=c.height/2,maxD=15;ctx.strokeStyle='#334155';ctx.beginPath();ctx.moveTo(0,mid);ctx.lineTo(c.width,mid);ctx.stroke();if(scoreTimeline.length<2)return;const maxT=scoreTimeline.at(-1).t||1;ctx.beginPath();scoreTimeline.forEach((p,i)=>{const x=(p.t/maxT)*c.width;const y=mid-(p.diff/maxD)*mid;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);});ctx.strokeStyle='#22c55e';ctx.lineWidth=2;ctx.stroke();}
-/* =======================
-   Init
-======================= */
-updateHintBar();
-render();
+// ========================
+// DRAG & DROP SETUP
+// ========================
+document.addEventListener('dragstart', e => {
+  if (e.target.classList.contains('player-card')) {
+    const playerId = e.target.dataset.pid;
+    e.dataTransfer.setData('text/plain', playerId);
+    e.target.classList.add('dragging');
+  }
+});
+
+document.addEventListener('dragend', e => {
+  if (e.target.classList.contains('player-card')) {
+    e.target.classList.remove('dragging');
+  }
+});
+
+// Click to select player
+document.addEventListener('click', e => {
+  const playerCard = e.target.closest('.player-card');
+  if (playerCard && !e.target.closest('button')) {
+    const playerId = parseInt(playerCard.dataset.pid);
+    toggleSelection(playerId);
+  }
+});
 </script>
 </body>
 </html>
